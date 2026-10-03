@@ -1,4 +1,4 @@
-# Cindo
+# Cindo (CINema INDO)
 
 Website katalog film legal. Data film berasal dari TMDB API, bukan dari situs bajakan.
 Dibuat sebagai proyek bulanan sambil belajar fullstack.
@@ -20,11 +20,12 @@ Dibuat sebagai proyek bulanan sambil belajar fullstack.
 
 ## Struktur Project
 
+```
 apps/web       -> Next.js (frontend)
 apps/api       -> Nest.js (backend)
 packages/db    -> Prisma schema & client
 docs/          -> PRD dan backlog
-
+```
 ## Cara Menjalankan
 
 Akan dilengkapi seiring development (lihat tiket SCRUM-109 dan SCRUM-136).
