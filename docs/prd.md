@@ -1,6 +1,6 @@
 # PRD & Jira Backlog: Website Katalog Film Legal
 
-> Nama project sementara: **CineKu** (ganti sesuka hati) Versi: 1.0 | Tipe: Proyek bulanan (belajar sambil membangun)
+> Nama project: **Cindo** Versi: 1.0 | Tipe: Proyek bulanan (belajar sambil membangun)
 
 ---
 
