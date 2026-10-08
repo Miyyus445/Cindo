@@ -28,7 +28,20 @@ docs/          -> PRD dan backlog
 ```
 ## Cara Menjalankan
 
-Akan dilengkapi seiring development (lihat tiket SCRUM-109 dan SCRUM-136).
+Prasyarat: Bun, Node, Git.
+
+```bash
+git clone <url-repo>
+cd Cindo
+bun install
+bun run dev
+```
+
+- Web (Next.js): http://localhost:3000
+- API (Nest): http://localhost:3001
+- Cek API: http://localhost:3001/health (balas `{"status":"ok"}`)
+
+Docker dan database akan ditambahkan di SCRUM-106/107.
 
 ## Dokumentasi
 
