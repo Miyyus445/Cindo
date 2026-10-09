@@ -35,3 +35,6 @@ coverage/
 
 # TypeScript build cache
 *.tsbuildinfo
+
+# Prisma generated client (packages/db)
+packages/db/generated/
