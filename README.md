@@ -15,7 +15,7 @@ Dibuat sebagai proyek bulanan sambil belajar fullstack.
 
 - **Frontend:** Next.js, Tailwind CSS
 - **Backend:** Nest.js
-- **Database:** PostgreSQL (Docker) + Prisma ORM
+- **Database:** PostgreSQL (Lokal) + Prisma ORM
 - **Tooling:** Bun, Turborepo, TypeScript
 
 ## Struktur Project
@@ -28,11 +28,20 @@ docs/          -> PRD dan backlog
 ```
 ## Cara Menjalankan
 
-Prasyarat: Bun, Node, Git.
+Prasyarat: Bun, Node, Git, PostgreSQL (versi 16 atau lebih baru).
+
+1. Clone repo:
 
 ```bash
 git clone <url-repo>
 cd Cindo
+```
+
+2. Buat database bernama `cindo` di PostgreSQL lokal.
+3. Salin `.env.example` menjadi `.env`, lalu ganti `GANTI_PASSWORD` dengan password PostgreSQL lokal kamu.
+4. Install dependency dan jalankan:
+
+```bash
 bun install
 bun run dev
 ```
@@ -41,7 +50,7 @@ bun run dev
 - API (Nest): http://localhost:3001
 - Cek API: http://localhost:3001/health (balas `{"status":"ok"}`)
 
-Docker dan database akan ditambahkan di SCRUM-106/107.
+Prisma ditambahkan di SCRUM-107.
 
 ## Dokumentasi
 
