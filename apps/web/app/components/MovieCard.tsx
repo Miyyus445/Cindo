@@ -8,7 +8,13 @@ export type Movie = {
   release_date: string;
 };
 
-export default function MovieCard({ movie }: { movie: Movie }) {
+export default function MovieCard({
+  movie,
+  eager = false,
+}: {
+  movie: Movie;
+  eager?: boolean;
+}) {
   return (
     <article className="overflow-hidden rounded-lg bg-zinc-900 ring-1 ring-white/10">
       <div className="relative aspect-[2/3] w-full bg-zinc-800">
@@ -19,6 +25,8 @@ export default function MovieCard({ movie }: { movie: Movie }) {
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
             className="object-cover"
+            loading={eager ? "eager" : "lazy"}
+            fetchPriority={eager ? "high" : "auto"}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center p-4 text-center text-sm text-zinc-400">
