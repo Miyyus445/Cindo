@@ -1,4 +1,4 @@
-import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Param, Query, BadRequestException } from '@nestjs/common';
 import { DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { TmdbService } from '../tmdb/tmdb.service.js';
 
@@ -14,5 +14,21 @@ export class MoviesController {
       throw new BadRequestException('page harus bilangan bulat 1-500');
     }
     return this.tmdbService.getPopularMovies(page);
+  }
+
+  @Get(':id')
+  async getMovieDetails(@Param('id', ParseIntPipe) id: number) {
+    if (!Number.isInteger(id) || id < 1) {
+      throw new BadRequestException('id harus bilangan bulat positif');
+    }
+    return this.tmdbService.getMovieDetails(id);
+  }
+
+  @Get(':id/videos')
+  async getMovieVideos(@Param('id', ParseIntPipe) id: number) {
+    if (!Number.isInteger(id) || id < 1) {
+      throw new BadRequestException('id harus bilangan bulat positif');
+    }
+    return this.tmdbService.getMovieVideos(id);
   }
 }

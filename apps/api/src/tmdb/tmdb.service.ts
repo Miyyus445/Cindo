@@ -1,4 +1,4 @@
-import { BadGatewayException, Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 const POPULAR_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -44,5 +44,29 @@ export class TmdbService {
     }
     this.popularCache.set(page, { data, expiresAt: Date.now() + POPULAR_CACHE_TTL_MS });
     return data;
+  }
+
+  async getMovieDetails(id: number): Promise<unknown> {
+    const url = `https://api.themoviedb.org/3/movie/${id}?language=en-US&api_key=${this.apiKey}`;
+    const res = await fetch(url);
+    if (res.status === 404) {
+      throw new NotFoundException('Film tidak ditemukan');
+    }
+    if (!res.ok) {
+      throw new BadGatewayException('Gagal mengambil detail film dari TMDB');
+    }
+    return res.json();
+  }
+
+  async getMovieVideos(id: number): Promise<unknown> {
+    const url = `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${this.apiKey}`;
+    const res = await fetch(url);
+    if (res.status === 404) {
+      throw new NotFoundException('Film tidak ditemukan');
+    }
+    if (!res.ok) {
+      throw new BadGatewayException('Gagal mengambil video film dari TMDB');
+    }
+    return res.json();
   }
 }
