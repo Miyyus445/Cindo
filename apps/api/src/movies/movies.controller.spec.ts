@@ -5,6 +5,8 @@ import { TmdbService } from '../tmdb/tmdb.service.js';
 
 const mockTmdbService = {
   getPopularMovies: vi.fn(),
+  getMovieDetails: vi.fn(),
+  getMovieVideos: vi.fn(),
 };
 
 describe('MoviesController', () => {
@@ -43,5 +45,33 @@ describe('MoviesController', () => {
   it('(c) bukan angka ditolak dengan 400', async () => {
     // ParseIntPipe akan melempar sebelum sampai sini, tapi cek manual
     await expect(controller.getPopularMovies(NaN)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(d) getMovieDetails id 0 ditolak dengan 400', async () => {
+    await expect(controller.getMovieDetails(0)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(d) getMovieDetails id negatif ditolak dengan 400', async () => {
+    await expect(controller.getMovieDetails(-5)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(e) getMovieDetails id valid memanggil service dengan angka yang benar', async () => {
+    mockTmdbService.getMovieDetails.mockResolvedValue({ id: 42 });
+    await controller.getMovieDetails(42);
+    expect(mockTmdbService.getMovieDetails).toHaveBeenCalledWith(42);
+  });
+
+  it('(d) getMovieVideos id 0 ditolak dengan 400', async () => {
+    await expect(controller.getMovieVideos(0)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(d) getMovieVideos id negatif ditolak dengan 400', async () => {
+    await expect(controller.getMovieVideos(-5)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(e) getMovieVideos id valid memanggil service dengan angka yang benar', async () => {
+    mockTmdbService.getMovieVideos.mockResolvedValue({ id: 42, results: [] });
+    await controller.getMovieVideos(42);
+    expect(mockTmdbService.getMovieVideos).toHaveBeenCalledWith(42);
   });
 });

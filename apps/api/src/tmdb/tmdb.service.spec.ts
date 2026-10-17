@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { BadGatewayException, NotFoundException } from '@nestjs/common';
 import { TmdbService } from './tmdb.service.js';
 
 function configWith(key: string | undefined): ConfigService {
@@ -88,5 +89,62 @@ describe('TmdbService', () => {
     await expect(svc.getPopularMovies(3)).rejects.toThrow();
     await expect(svc.getPopularMovies(3)).resolves.toEqual(data);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('(a) getMovieDetails sukses mengembalikan data', async () => {
+    const data = { id: 42, title: 'Film B' };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(data),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const svc = new TmdbService(configWith('dummy-key'));
+    await expect(svc.getMovieDetails(42)).resolves.toEqual(data);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/movie/42?language=en-US'),
+    );
+  });
+
+  it('(b) TMDB membalas 404 -> NotFoundException', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
+    );
+    const svc = new TmdbService(configWith('dummy-key'));
+    await expect(svc.getMovieDetails(999)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('(c) TMDB membalas 500 -> BadGatewayException', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 500 }),
+    );
+    const svc = new TmdbService(configWith('dummy-key'));
+    await expect(svc.getMovieDetails(42)).rejects.toBeInstanceOf(BadGatewayException);
+  });
+
+  it('(d) getMovieVideos sukses mengembalikan data', async () => {
+    const data = { id: 42, results: [{ key: 'abc123' }] };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(data),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const svc = new TmdbService(configWith('dummy-key'));
+    await expect(svc.getMovieVideos(42)).resolves.toEqual(data);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/movie/42/videos'),
+    );
+  });
+
+  it('(e) getMovieVideos 404 -> NotFoundException', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
+    );
+    const svc = new TmdbService(configWith('dummy-key'));
+    await expect(svc.getMovieVideos(999)).rejects.toBeInstanceOf(NotFoundException);
   });
 });
