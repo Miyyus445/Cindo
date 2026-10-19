@@ -16,10 +16,24 @@ type MovieDetail = {
   poster_path: string | null;
 };
 
+type MovieVideo = {
+  id: string;
+  key: string;
+  name: string;
+  site: string;
+  type: string;
+  official: boolean;
+  published_at: string;
+};
+
 type FetchResult =
   | { ok: true; data: MovieDetail }
   | { ok: false; notFound: true }
   | { ok: false; notFound: false; message: string };
+
+type VideosFetchResult =
+  | { ok: true; data: MovieVideo[] }
+  | { ok: false; message: string };
 
 async function getMovieDetail(id: string): Promise<FetchResult> {
   try {
@@ -45,6 +59,50 @@ async function getMovieDetail(id: string): Promise<FetchResult> {
       message: "Gagal memuat detail film. Pastikan API berjalan di port 3001.",
     };
   }
+}
+
+async function getMovieVideos(id: string): Promise<VideosFetchResult> {
+  try {
+    const res = await fetch(`${API_URL}/movies/${id}/videos`, {
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        message: `Gagal memuat video film (status ${res.status}).`,
+      };
+    }
+    const data = await res.json();
+    const videos = Array.isArray(data.results) ? data.results : [];
+    return { ok: true, data: videos };
+  } catch {
+    return {
+      ok: false,
+      message: "Trailer tidak dapat dimuat.",
+    };
+  }
+}
+
+const YOUTUBE_KEY_REGEX = /^[A-Za-z0-9_-]{11}$/;
+
+function isValidYouTubeKey(key: string): boolean {
+  return YOUTUBE_KEY_REGEX.test(key);
+}
+
+function pickTrailer(videos: MovieVideo[]): MovieVideo | null {
+  const youtubeTrailers = videos.filter(
+    (v) => v.site === "YouTube" && v.type === "Trailer" && isValidYouTubeKey(v.key)
+  );
+
+  if (youtubeTrailers.length === 0) return null;
+
+  // Prioritaskan official: true, lalu published_at terbaru
+  youtubeTrailers.sort((a, b) => {
+    if (a.official !== b.official) return b.official ? 1 : -1;
+    return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+  });
+
+  return youtubeTrailers[0];
 }
 
 function formatRuntime(minutes: number | null): string {
@@ -95,10 +153,14 @@ export default async function MovieDetailPage({
     notFound();
   }
 
-  const result = await getMovieDetail(id);
+  // Fetch detail dan video secara paralel
+  const [detailResult, videosResult] = await Promise.all([
+    getMovieDetail(id),
+    getMovieVideos(id),
+  ]);
 
-  if (!result.ok) {
-    if (result.notFound) {
+  if (!detailResult.ok) {
+    if (detailResult.notFound) {
       notFound();
     }
     // Error lain: tampilkan pesan dengan link kembali, tanpa crash
@@ -126,7 +188,7 @@ export default async function MovieDetailPage({
             Kembali ke daftar film
           </Link>
           <div className="rounded-lg bg-zinc-900 p-6 ring-1 ring-white/10 text-center">
-            <p className="text-zinc-300">{result.message}</p>
+            <p className="text-zinc-300">{detailResult.message}</p>
             <Link
               href="/"
               className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 ring-1 ring-white/10 text-zinc-50 hover:bg-zinc-700 transition-colors"
@@ -153,7 +215,20 @@ export default async function MovieDetailPage({
     );
   }
 
-  const movie = result.data;
+  const movie = detailResult.data;
+
+  // Proses trailer
+  let trailerKey: string | null = null;
+  let trailerError: string | null = null;
+
+  if (videosResult.ok) {
+    const trailer = pickTrailer(videosResult.data);
+    if (trailer) {
+      trailerKey = trailer.key;
+    }
+  } else {
+    trailerError = videosResult.message;
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 font-sans text-zinc-50">
@@ -240,6 +315,28 @@ export default async function MovieDetailPage({
               <p className="mt-2 text-zinc-300 leading-relaxed whitespace-pre-line">
                 {getOverview(movie.overview)}
               </p>
+            </div>
+
+            {/* Trailer Section */}
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold text-zinc-50">Trailer</h2>
+              {trailerKey ? (
+                <div className="mt-4 relative w-full aspect-video rounded-lg overflow-hidden bg-zinc-900 ring-1 ring-white/10">
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${trailerKey}`}
+                    title={`Trailer ${movie.title}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : trailerError ? (
+                <p className="mt-2 text-zinc-400 italic">{trailerError}</p>
+              ) : (
+                <p className="mt-2 text-zinc-400 italic">Trailer belum tersedia.</p>
+              )}
             </div>
           </div>
         </div>
