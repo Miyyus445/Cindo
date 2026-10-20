@@ -7,22 +7,25 @@ function configWith(key: string | undefined): ConfigService {
 }
 
 describe('TmdbService', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(global, 'fetch');
+  });
+
   afterEach(() => {
-    vi.unstubAllGlobals();
+    fetchSpy.mockRestore();
   });
 
   it('(a) sukses mengembalikan data', async () => {
     const data = { results: [{ id: 1, title: 'Film A' }] };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(data) }),
-    );
+    fetchSpy.mockResolvedValue({ ok: true, json: () => Promise.resolve(data) });
     const svc = new TmdbService(configWith('dummy-key'));
     await expect(svc.getPopularMovies(1)).resolves.toEqual(data);
   });
 
   it('(b) respons gagal melempar error', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    fetchSpy.mockResolvedValue({ ok: false, status: 500 });
     const svc = new TmdbService(configWith('dummy-key'));
     await expect(svc.getPopularMovies(1)).rejects.toThrow();
   });
@@ -35,14 +38,11 @@ describe('TmdbService', () => {
 
   it('(d) dua panggilan halaman sama dalam TTL hanya fetch 1 kali', async () => {
     const data = { results: [{ id: 1 }] };
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: () => Promise.resolve(data) });
-    vi.stubGlobal('fetch', fetchMock);
+    fetchSpy.mockResolvedValue({ ok: true, json: () => Promise.resolve(data) });
     const svc = new TmdbService(configWith('dummy-key'));
     await svc.getPopularMovies(2);
     await svc.getPopularMovies(2);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
   it('(e) halaman berbeda fetch terpisah', async () => {
@@ -53,26 +53,23 @@ describe('TmdbService', () => {
         json: () => Promise.resolve({ page }),
       });
     });
-    vi.stubGlobal('fetch', fetchMock);
+    fetchSpy.mockImplementation(fetchMock);
     const svc = new TmdbService(configWith('dummy-key'));
     await svc.getPopularMovies(1);
     await svc.getPopularMovies(2);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   it('(f) setelah TTL lewat fetch dipanggil lagi', async () => {
     vi.useFakeTimers();
     try {
       const data = { results: [] };
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue({ ok: true, json: () => Promise.resolve(data) });
-      vi.stubGlobal('fetch', fetchMock);
+      fetchSpy.mockResolvedValue({ ok: true, json: () => Promise.resolve(data) });
       const svc = new TmdbService(configWith('dummy-key'));
       await svc.getPopularMovies(1);
       vi.advanceTimersByTime(5 * 60 * 1000 + 1);
       await svc.getPopularMovies(1);
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
     } finally {
       vi.useRealTimers();
     }
@@ -80,71 +77,84 @@ describe('TmdbService', () => {
 
   it('(g) respons gagal tidak di-cache', async () => {
     const data = { results: [{ id: 9 }] };
-    const fetchMock = vi
-      .fn()
+    fetchSpy
       .mockResolvedValueOnce({ ok: false, status: 500 })
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(data) });
-    vi.stubGlobal('fetch', fetchMock);
     const svc = new TmdbService(configWith('dummy-key'));
     await expect(svc.getPopularMovies(3)).rejects.toThrow();
     await expect(svc.getPopularMovies(3)).resolves.toEqual(data);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   it('(a) getMovieDetails sukses mengembalikan data', async () => {
     const data = { id: 42, title: 'Film B' };
-    const fetchMock = vi.fn().mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       status: 200,
       json: () => Promise.resolve(data),
     });
-    vi.stubGlobal('fetch', fetchMock);
     const svc = new TmdbService(configWith('dummy-key'));
     await expect(svc.getMovieDetails(42)).resolves.toEqual(data);
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining('/movie/42?language=en-US'),
     );
   });
 
   it('(b) TMDB membalas 404 -> NotFoundException', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
-    );
+    fetchSpy.mockResolvedValue({ ok: false, status: 404 });
     const svc = new TmdbService(configWith('dummy-key'));
     await expect(svc.getMovieDetails(999)).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('(c) TMDB membalas 500 -> BadGatewayException', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 500 }),
-    );
+    fetchSpy.mockResolvedValue({ ok: false, status: 500 });
     const svc = new TmdbService(configWith('dummy-key'));
     await expect(svc.getMovieDetails(42)).rejects.toBeInstanceOf(BadGatewayException);
   });
 
   it('(d) getMovieVideos sukses mengembalikan data', async () => {
     const data = { id: 42, results: [{ key: 'abc123' }] };
-    const fetchMock = vi.fn().mockResolvedValue({
+    fetchSpy.mockResolvedValue({
       ok: true,
       status: 200,
       json: () => Promise.resolve(data),
     });
-    vi.stubGlobal('fetch', fetchMock);
     const svc = new TmdbService(configWith('dummy-key'));
     await expect(svc.getMovieVideos(42)).resolves.toEqual(data);
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining('/movie/42/videos'),
     );
   });
 
   it('(e) getMovieVideos 404 -> NotFoundException', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
-    );
+    fetchSpy.mockResolvedValue({ ok: false, status: 404 });
     const svc = new TmdbService(configWith('dummy-key'));
     await expect(svc.getMovieVideos(999)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('(a) searchMovies sukses mengembalikan data', async () => {
+    const data = { results: [{ id: 1, title: 'Film Cari' }], page: 1 };
+    fetchSpy.mockResolvedValue({ ok: true, json: () => Promise.resolve(data) });
+    const svc = new TmdbService(configWith('dummy-key'));
+    await expect(svc.searchMovies('avatar', 1)).resolves.toEqual(data);
+  });
+
+  it('(b) query dengan karakter khusus di-encode di URL', async () => {
+    fetchSpy.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ results: [], page: 1 }),
+    });
+    const svc = new TmdbService(configWith('dummy-key'));
+    await svc.searchMovies('a&b c', 2);
+    const calledUrl = fetchSpy.mock.calls[0][0] as string;
+    expect(calledUrl).toContain('query=a%26b+c');
+    expect(calledUrl).toContain('page=2');
+    expect(calledUrl).toContain('include_adult=false');
+  });
+
+  it('(c) respons gagal -> BadGatewayException', async () => {
+    fetchSpy.mockResolvedValue({ ok: false, status: 500 });
+    const svc = new TmdbService(configWith('dummy-key'));
+    await expect(svc.searchMovies('test', 1)).rejects.toBeInstanceOf(BadGatewayException);
   });
 });

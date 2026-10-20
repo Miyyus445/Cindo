@@ -7,6 +7,7 @@ const mockTmdbService = {
   getPopularMovies: vi.fn(),
   getMovieDetails: vi.fn(),
   getMovieVideos: vi.fn(),
+  searchMovies: vi.fn(),
 };
 
 describe('MoviesController', () => {
@@ -73,5 +74,24 @@ describe('MoviesController', () => {
     mockTmdbService.getMovieVideos.mockResolvedValue({ id: 42, results: [] });
     await controller.getMovieVideos(42);
     expect(mockTmdbService.getMovieVideos).toHaveBeenCalledWith(42);
+  });
+
+  it('(d) q kosong ditolak 400', async () => {
+    await expect(controller.searchMovies('', 1)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(d) q hanya spasi ditolak 400', async () => {
+    await expect(controller.searchMovies('   ', 1)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(d) q lebih dari 100 karakter ditolak 400', async () => {
+    const longQ = 'a'.repeat(101);
+    await expect(controller.searchMovies(longQ, 1)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(e) q valid memanggil service dengan q di-trim dan page benar', async () => {
+    mockTmdbService.searchMovies.mockResolvedValue({ results: [], page: 2 });
+    await controller.searchMovies('  avatar  ', 2);
+    expect(mockTmdbService.searchMovies).toHaveBeenCalledWith('avatar', 2);
   });
 });

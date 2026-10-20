@@ -69,4 +69,19 @@ export class TmdbService {
     }
     return res.json();
   }
+
+  async searchMovies(query: string, page = 1): Promise<unknown> {
+    const params = new URLSearchParams({
+      api_key: this.apiKey,
+      query,
+      page: String(page),
+      include_adult: 'false',
+    });
+    const url = `https://api.themoviedb.org/3/search/movie?${params.toString()}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new BadGatewayException('Gagal mencari film dari TMDB');
+    }
+    return res.json();
+  }
 }
