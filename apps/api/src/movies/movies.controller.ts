@@ -16,6 +16,24 @@ export class MoviesController {
     return this.tmdbService.getPopularMovies(page);
   }
 
+  @Get('search')
+  async searchMovies(
+    @Query('q') q: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  ) {
+    const trimmed = q?.trim();
+    if (!trimmed) {
+      throw new BadRequestException('q wajib diisi dan tidak boleh hanya spasi');
+    }
+    if (trimmed.length > 100) {
+      throw new BadRequestException('q maksimal 100 karakter');
+    }
+    if (!Number.isInteger(page) || page < 1 || page > 500) {
+      throw new BadRequestException('page harus bilangan bulat 1-500');
+    }
+    return this.tmdbService.searchMovies(trimmed, page);
+  }
+
   @Get(':id')
   async getMovieDetails(@Param('id', ParseIntPipe) id: number) {
     if (!Number.isInteger(id) || id < 1) {
