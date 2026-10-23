@@ -8,14 +8,18 @@ export default function SearchBar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const initialQ = searchParams?.get("q") ?? "";
-  const [inputValue, setInputValue] = useState(initialQ);
+  const urlQ = searchParams?.get("q") ?? "";
+  const trimmedUrlQ = urlQ.trim();
+
+  const [inputValue, setInputValue] = useState(trimmedUrlQ);
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRenderRef = useRef(true);
   const searchParamsRef = useRef(searchParams);
   const routerRef = useRef(router);
   const pathnameRef = useRef(pathname);
+  const lastProcessedUrlQRef = useRef(trimmedUrlQ);
+  const isNavigatingRef = useRef(false);
 
   useLayoutEffect(() => {
     searchParamsRef.current = searchParams;
@@ -26,6 +30,23 @@ export default function SearchBar() {
   useEffect(() => {
     if (isFirstRenderRef.current) {
       isFirstRenderRef.current = false;
+      lastProcessedUrlQRef.current = trimmedUrlQ;
+      return;
+    }
+
+    if (isNavigatingRef.current) {
+      lastProcessedUrlQRef.current = trimmedUrlQ;
+      return;
+    }
+
+    if (trimmedUrlQ !== lastProcessedUrlQRef.current) {
+      setInputValue(trimmedUrlQ);
+      lastProcessedUrlQRef.current = trimmedUrlQ;
+    }
+  }, [searchParams, trimmedUrlQ]);
+
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
       return;
     }
 
@@ -41,6 +62,9 @@ export default function SearchBar() {
         return;
       }
 
+      isNavigatingRef.current = true;
+      lastProcessedUrlQRef.current = trimmed;
+
       const params = new URLSearchParams(searchParamsRef.current?.toString() ?? "");
       if (trimmed) {
         params.set("q", trimmed);
@@ -52,6 +76,10 @@ export default function SearchBar() {
       const newSearch = params.toString();
       const newUrl = pathnameRef.current + (newSearch ? `?${newSearch}` : "");
       routerRef.current.replace(newUrl, { scroll: false });
+
+      requestAnimationFrame(() => {
+        isNavigatingRef.current = false;
+      });
     }, 400);
 
     return () => {
