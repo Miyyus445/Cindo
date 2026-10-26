@@ -8,6 +8,8 @@ const mockTmdbService = {
   getMovieDetails: vi.fn(),
   getMovieVideos: vi.fn(),
   searchMovies: vi.fn(),
+  discoverMovies: vi.fn(),
+  getGenres: vi.fn(),
 };
 
 describe('MoviesController', () => {
@@ -93,5 +95,27 @@ describe('MoviesController', () => {
     mockTmdbService.searchMovies.mockResolvedValue({ results: [], page: 2 });
     await controller.searchMovies('  avatar  ', 2);
     expect(mockTmdbService.searchMovies).toHaveBeenCalledWith('avatar', 2);
+  });
+
+  it('(g) discover valid memanggil service dengan angka genre dan page yang benar', async () => {
+    mockTmdbService.discoverMovies.mockResolvedValue({ results: [], page: 2 });
+    await controller.discoverMovies(28, 2);
+    expect(mockTmdbService.discoverMovies).toHaveBeenCalledWith(28, 2);
+  });
+
+  it('(h) genre 0 ditolak 400', async () => {
+    await expect(controller.discoverMovies(0, 1)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(h) genre 100000 ditolak 400', async () => {
+    await expect(controller.discoverMovies(100000, 1)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(h) page 0 ditolak 400', async () => {
+    await expect(controller.discoverMovies(28, 0)).rejects.toThrow(BadRequestException);
+  });
+
+  it('(h) page 501 ditolak 400', async () => {
+    await expect(controller.discoverMovies(28, 501)).rejects.toThrow(BadRequestException);
   });
 });

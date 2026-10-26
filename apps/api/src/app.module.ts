@@ -5,12 +5,14 @@ import { AppService } from './app.service.js';
 import { HealthController } from './health.controller.js';
 import { TmdbModule } from './tmdb/tmdb.module.js';
 import { MoviesModule } from './movies/movies.module.js';
+import { GenresModule } from './genres/genres.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '../../.env' }),
     TmdbModule,
     MoviesModule,
+    GenresModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
