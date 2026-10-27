@@ -3,8 +3,14 @@ import { ConfigService } from '@nestjs/config';
 
 const POPULAR_CACHE_TTL_MS = 5 * 60 * 1000;
 const POPULAR_CACHE_MAX_ENTRIES = 100;
+const GENRES_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 interface PopularCacheEntry {
+  data: unknown;
+  expiresAt: number;
+}
+
+interface GenresCacheEntry {
   data: unknown;
   expiresAt: number;
 }
@@ -13,6 +19,7 @@ interface PopularCacheEntry {
 export class TmdbService {
   private readonly apiKey: string;
   private readonly popularCache = new Map<number, PopularCacheEntry>();
+  private genresCache: GenresCacheEntry | null = null;
 
   constructor(private readonly configService: ConfigService) {
     const key = this.configService.get<string>('TMDB_API_KEY');
@@ -81,6 +88,43 @@ export class TmdbService {
     const res = await fetch(url);
     if (!res.ok) {
       throw new BadGatewayException('Gagal mencari film dari TMDB');
+    }
+    return res.json();
+  }
+
+  async getGenres(): Promise<unknown> {
+    if (this.genresCache) {
+      if (Date.now() < this.genresCache.expiresAt) {
+        return this.genresCache.data;
+      }
+      this.genresCache = null;
+    }
+    const params = new URLSearchParams({
+      api_key: this.apiKey,
+      language: 'en-US',
+    });
+    const url = `https://api.themoviedb.org/3/genre/movie/list?${params.toString()}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new BadGatewayException('Gagal mengambil daftar genre dari TMDB');
+    }
+    const data = await res.json();
+    this.genresCache = { data, expiresAt: Date.now() + GENRES_CACHE_TTL_MS };
+    return data;
+  }
+
+  async discoverMovies(genreId: number, page = 1): Promise<unknown> {
+    const params = new URLSearchParams({
+      api_key: this.apiKey,
+      with_genres: String(genreId),
+      page: String(page),
+      sort_by: 'popularity.desc',
+      include_adult: 'false',
+    });
+    const url = `https://api.themoviedb.org/3/discover/movie?${params.toString()}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new BadGatewayException('Gagal mengambil film dari TMDB');
     }
     return res.json();
   }

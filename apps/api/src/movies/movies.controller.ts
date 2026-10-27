@@ -34,6 +34,20 @@ export class MoviesController {
     return this.tmdbService.searchMovies(trimmed, page);
   }
 
+  @Get('discover')
+  async discoverMovies(
+    @Query('genre', ParseIntPipe) genre: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  ) {
+    if (!Number.isInteger(genre) || genre < 1 || genre > 99999) {
+      throw new BadRequestException('genre harus bilangan bulat 1-99999');
+    }
+    if (!Number.isInteger(page) || page < 1 || page > 500) {
+      throw new BadRequestException('page harus bilangan bulat 1-500');
+    }
+    return this.tmdbService.discoverMovies(genre, page);
+  }
+
   @Get(':id')
   async getMovieDetails(@Param('id', ParseIntPipe) id: number) {
     if (!Number.isInteger(id) || id < 1) {

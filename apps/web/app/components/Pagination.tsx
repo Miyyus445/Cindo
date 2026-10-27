@@ -4,9 +4,10 @@ type Props = {
   page: number;
   totalPages: number;
   q?: string;
+  genre?: number;
 };
 
-export default function Pagination({ page, totalPages, q }: Props) {
+export default function Pagination({ page, totalPages, q, genre }: Props) {
   const prevPage = page - 1;
   const nextPage = page + 1;
   const isFirst = page <= 1;
@@ -16,6 +17,8 @@ export default function Pagination({ page, totalPages, q }: Props) {
     const params = new URLSearchParams();
     if (q && q.trim()) {
       params.set("q", q.trim());
+    } else if (genre) {
+      params.set("genre", String(genre));
     }
     if (targetPage > 1) {
       params.set("page", String(targetPage));
