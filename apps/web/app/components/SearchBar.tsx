@@ -72,6 +72,7 @@ export default function SearchBar() {
         params.delete("q");
       }
       params.delete("page");
+      params.delete("genre");
 
       const newSearch = params.toString();
       const newUrl = pathnameRef.current + (newSearch ? `?${newSearch}` : "");
