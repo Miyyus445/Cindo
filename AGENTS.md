@@ -22,3 +22,10 @@ This block is written and re-added by `turbo` before repository-scoped commands 
 - Tetap di scope tiket; file di luar scope jangan disentuh.
 - Selesai: `bun run lint` + `bun run build` (apps/web) atau `bun run test` + `bun run build` (apps/api), lalu `git status --short`.
 - Kalau ada error: maksimal 2 percobaan perbaikan, lalu BERHENTI dan tampilkan pesan error lengkap (tanpa secret).
+
+## Aturan Blueprint
+- Setelah selesai ngerjain perubahan signifikan (tambah/hapus modul, endpoint, tabel DB, env var, ganti dependency, ubah struktur folder), update bagian terkait di BLUEPRINT.md dan AI_CONTEXT.md.
+- Update bagian yang berubah aja, jangan tulis ulang semuanya (hemat kuota).
+- Perbarui baris "Update terakhir" di BLUEPRINT.md.
+- Perubahan kecil (fix typo, styling, bugfix ringan) ga perlu update blueprint.
+- Di akhir tugas, sebut bagian blueprint mana yang diupdate.
